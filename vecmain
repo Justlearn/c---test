@@ -1,0 +1,43 @@
+#include <iostream>
+#include <string>
+using namespace std;
+
+int main()
+{
+	Vector<int> ivec;
+	Vector<double> dvec;
+	Vector<string> svec;
+	cout<<"Vector<int>:"<<endl;
+	int ival;
+	while(cin>>ival)
+		ivec.push_back(ival);
+	cin.clear();
+	for(Vector<int>::iterator iter=ivec.begin();
+		iter!=ivec.end();++iter)
+		cout<<*iter<<"\t";
+	cout<<"size:"<<ivec.size()<<"\t"<<"capacity:"<<ivec.capacity()<<endl;
+	ivec.resize(12);
+	cout<<"size:"<<ivec.size()<<"\t"<<"capacity:"<<ivec.capacity()<<endl;
+	ivec.reserve(50);
+	cout<<"size:"<<ivec.size()<<"\t"<<"capacity:"<<ivec.capacity()<<endl;
+	cout<<endl;
+	cout<<"Vector<double>:"<<endl;
+	double dval;
+	while(cin>>dval)
+		dvec.push_back(dval);
+	cin.clear();
+	for(Vector<double>::iterator iter=dvec.begin();
+		iter!=dvec.end();++iter)
+		cout<<*iter<<"\t";
+	cout<<endl;
+	cout<<"Vector<string>:"<<endl;
+	string sval;
+	while(cin>>sval)
+		svec.push_back(sval);
+	cin.clear();
+	for(Vector<string>::iterator iter=svec.begin();
+		iter!=svec.end();++iter)
+		cout<<*iter<<endl;
+	cout<<endl;
+	return 0;
+}

@@ -1,0 +1,263 @@
+//functions.cpp
+//for different file use
+
+#include <fstream>
+#include <string>
+#include <vector>
+#include <math>
+using namespace std;
+
+string make_plural(size_t ctr,const string &word,
+	const string &ending){
+	return (ctr<=1) ? word:word+ending;
+}
+
+//open inputfile "in" and bound it to given file
+ifstream& open_file(ifstream &in,const string &file){
+	in.close();//close in case it was open
+	in.clear();//clear any existing errors
+	//if open fails,the stream will be in a valid state
+	in.open(file.c_str());//open the given file
+	return in;
+}
+
+/************swap************/
+template<typename T>
+void swap(T a,T b)
+{
+	T temp=a;
+	a=b;
+	b=temp;
+}
+
+/**********Prime******************/
+//O(n)
+bool isPrime(int n)
+{
+	if(n<2)
+		return false;
+	for(int i=2;i<n;++i)
+		if(n%i==0)
+			return false;
+	return true;
+}
+//another version
+bool isPrime(int n)
+{
+	if(n<2)
+		return false;
+	if(n==2)
+		return true;
+	for(int i=3;i<sqrt(n);++i)
+	{
+		if(n%i==0)
+			return false;
+		else
+			return true;
+	}
+}
+
+/***********Bubble Sort O(n2)**************/
+//T can be build-in type like int,double...
+template<typename T>
+void BubbleSort(vector<T>& vec)
+{
+	for(size_t size=vec.size();size>0;--size)
+	{
+		for(size_t i=0;i<size;++i)
+		{	//every round,two adjacent elements sorted by ascending order
+			//and at last the biggest one is in the end of range
+			if(vec[i]>vec[i+1]){
+				T temp=vec[i];
+				vec[i]=vec[i+1];
+				vec[i+1]=temp;
+			}
+		}
+	}
+} 
+
+/************Insertion Sort O(n2)***************/
+//when n is very little,InsertionSort is a good choice
+template<typename T>
+void InsertSort(vector<T>& vec)
+{
+	for(size_t i=1;i<vec.size();++i)
+	{
+		T temp=vec[i];
+		size_t j=i-1;
+		while(j>=0 && vec[j]>temp){//find the position that temp can insert
+			vec[j+1]=vec[j];
+			--j;
+		}
+		vec[j+1]=temp;
+	}
+}
+
+/**********Binary Insertion Sort O(n2)************/
+//use BinarySearch to get the right insertion position
+template<typename T>
+void BInsertSort(vector<T>& vec)
+{
+	for(size_t i=1;i<vec.size();++i)
+	{
+		T temp=vec[i];
+		size_t low=0,high=i-1;
+		while(low<=high){
+			mid=(low+high)/2;
+			if(temp<vec[mid])
+				high=mid-1;
+			else
+				low=mid+1;
+		}//while
+		for(size_t j=i-1;j>high;--j)
+			vec[j+1]=vec[j];
+		vec[high+1]=temp;
+	}
+}
+
+/***********ShellSort O(nlog2n)**********************/
+//no-stable sort,sort every delta sequence1
+//example:3,2,1 as delta
+template<typename T>
+void ShellSort(vector<T>& vec)
+{
+	for(int delta=3;delta>0;--delta)//delta decrease
+		for(size_t i=0;i<delta;++i)//every delta can divide sequence to delta parts
+			for(size_t j=i+delta;j<vec.size();++j)//implement insertion sort at every delta sequence
+			{
+				T temp=vec[j];
+				size_t k=j-delta;
+				while(k>=0 && temp<vec[k]){
+					vec[j]=vec[k];
+					k-=delta;
+				}
+				vec[k+delta]=temp;
+			}
+}
+
+/*************QuickSort O(nlogn)*****************/
+//nlogn is average TimeComplex,maybe O(n2) in bad situation
+//based on divide-and-conquer strategy
+template<typename T>
+size_t Partition(vector<T>& vec,size_t low,size_t high)
+{
+	//use the first element as pivot key
+	T temp=vec[low];
+	T pivot=vec[low];
+	while(low<high){//from high-to-before search
+		while(low<high && vec[high]>=pivot)
+			--high;
+		vec[low]=vec[high];
+		while(low<high && vec[low]<=pivot)
+			++low;
+		vec[high]=vec[low];
+	}
+	vec[low]=temp;
+	return low;
+}
+
+//QuickSort calls Partition
+template<typename T>
+void QuickSort(vector<T>& vec,size_t low,size_t high)
+{
+	if(low<high){
+		//divide vec to rtwo parts,pivotLoc as boundry point 
+		size_t pivotLoc=Partition(vec,low,high);
+		//recursive calls QuickSort
+		QuickSort(vec,low,pivotLoc-1);
+		Quick(vec,pivotLoc,high);
+	}
+}
+
+/*************SlectSort O(n2)*************************/
+template<typename T>
+void SlectSort(vector<T>& vec)
+{
+	size_t minIndex;
+	//get minimum element's index
+	for(size_t i=0;i<vec.size()-1;++i)
+	{
+		minIndex=i;
+		for(size_t j=i+1;j<vec.size();++j)
+			if(vec[j]<vec[minIndex])
+				minIndex=j;
+		//change record with vec[minIndex]
+			if(minIndex!=i){
+				T temp=vec[i];
+				vec[i]=vec[minIndex];
+				vec[minIndex]=temp;
+			}
+	}
+}
+
+/************MergeSort O(nlogn)***********************/
+//a stable-sort,need extra-space of same size with vec
+template<typename T>
+void MergeSort(vector<T>& vec,size_t low,sie_t high)
+{
+	if(low>high)
+		return;
+	else{
+		size_t mid=(low+high)/2;//divide vec into two parts
+		MergeSort(vec,low,mid);
+		MergeSort(vec,mid+1,high);
+		//build a new arry to save mergesort array
+		vector<T> newVec(high-low+1);
+		size_t i=low,j=mid+1,k=low;
+		for(/**/;i<=mid && j<=high;++k)
+		{
+			if(vec[i]<=vec[j])
+				newVec[k]=vec[i++];
+			else
+				newVec[k]=vec[j++];
+		}
+		//if first range still has elements,then append to newVector
+		for(/*i*/;i<=mid;++i,++k)
+			newVec[k]=vec[i];
+		//if second range still has elements,then append to newVector
+		for(/*j*/;j<=high;++j,++k)
+			newVec[k]=vec[j];
+		//copy elements from vec to newVec
+		for(size_t index=0;index<high-low+1;++index)
+			vec[index]=newVec[index];
+	}
+}
+
+/*************HeapSort O(nlogn)*********************/
+//use array to store heap elements
+void HeapAdjust(int* a,int i,int size)
+{
+	//make a[i..i+size] a big top heap
+	int lchild=2*i;
+	int rhild=2*i+1;
+	int max=i;//initialize max index with i
+	if(i<=(size/2)){
+		if(lchild<size && a[lchild]>a[max]){
+			max=lchild;
+		}
+		if(rchild<size && a[rchild]>a[max]){
+			max=rchild;
+		}
+		if(max!=i){
+			swap(a[i],a[max]);
+			HeapAdjust(a,max,size);//avoid subtree that max as fathernode is not heap
+		}
+	}
+}
+
+void BuildHeap(int* a,int size)
+{
+	for(int i=(size/2);i>0;--i)//the max index of non-leaf node is [size/2] 
+		HeapAdjust(a,i,size);
+}
+
+void HeapSort(int* a,int size)
+{
+	BuildHeap(a,size);//intitalize array and build heap
+	for(int i=size;i>0;--i)
+	{
+		swap(a[1],a[i]);//swap heap top and last element,heap top is the bbiggest element
+		//BuildHeap(a,i-1);turn remaining element to a max top heap
+		HeapAdjust(a,1,i-1);//adjust heap top node,and construct a max top heap
+	}
+}

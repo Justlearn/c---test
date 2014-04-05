@@ -1,0 +1,261 @@
+//analog STL vector,but remain parts of its function
+#ifndef VECTOR_H
+#define VECTOR_H
+#include <xmemory>
+#include <stdexcept>
+#include <limits>
+
+template<typename T>
+class Vector{
+public:
+	//size_t is unsigned int
+	typedef T* iterator;
+	typedef const T* const_iterator;
+	typedef T& reference;
+	typedef const T& const_reference;
+public:
+	//constructor
+	Vector():elements(0),first_free(0),ends(0){}
+	//property
+	void clear();
+	void pop_back();
+	void push_back(const_reference);
+	void reserve(const size_t n);
+	void resize(const size_t n);
+	void resize(const size_t n,const T&);
+	iterator begin(){
+		return elements;
+	}
+	iterator end() const{
+		return first_free;
+	}
+	size_t size() const{
+		return first_free-elements;
+	}
+	size_t capacity() const{
+		return ends-elements;
+	}
+	bool empty(Vector& vec) const{
+		return first_free-elements;
+	}
+	//return first and end reference
+	reference front(){
+		return *elements;
+	}
+	const_reference front() const{
+		return *elements;
+	}
+	reference back(){
+		return *(first_free-1);
+	}
+	const_reference back() const{
+		return *(first_free-1);
+	}
+	//copy control
+	Vector(const Vector& rhs):elements(rhs.elements),
+		first_free(rhs.first_free),ends(rhs.ends){}
+	//~Vector();
+	//operator
+	Vector& operator=(const Vector& rhs){
+		elements=rhs.elements;
+		first_free=rhs.first_free;
+		ends=rhs.ends;
+	}
+	reference operator[](size_t index){
+		return *(elements+index);
+	}
+	const_reference operator[](size_t index) const{
+		return *(elements+index);
+	}
+	bool operator==(const Vector& rhs);
+	reference at(size_t pos) const
+	{
+		return *(elements+pos);
+	};
+	iterator erase(iterator);//erase an alement
+	iterator erase(iterator,iterator);//erase a range
+private:
+	iterator elements;//points to first element
+	iterator first_free;//
+	iterator ends;//past-the-end
+	void reallocate();//get more space to copy present element
+	static std::allocator<T> alloc;//get objects of unconstructed memeory
+};//Vector
+
+//#include "Vector.cpp"
+//implemention of Vector.h
+//#include "Vector.h"
+
+template<typename T> std::allocator<T> Vector<T>::alloc;
+
+template<typename T> void Vector<T>::reallocate()
+{
+  //caculate present size and allocate space twice space the present lements
+  ptrdiff_t size=first_free-elements;
+  ptrdiff_t newcapacity=2*max(size,1);
+  //allocate space to save newcapacity elements of T type
+  T* newelements=alloc.allocate(newcapacity);
+  //construct a copy of present elements in new space
+  uninitialized_copy(elements,first_free,newelements);
+  //revocate old elements inverse order
+  for(T* p=first_free;p!=elements;/*empty*/)
+    alloc.destroy(--p);//call destructor of type that p points to
+  //o value pointer can't call deallocate
+  if(elements)
+    //free memory that hold elements
+    alloc.deallocate(elements,ends-elements);
+  //make data structure points to new elements
+  elements=newelements;
+  first_free=elements+size;
+  ends=elements+newcapacity;
+}
+
+template<typename T>
+void Vector<T>::clear()
+{   //just remove elements from Vector but not free memory
+	if(elements!=first_free){
+		for(T* p=first_free;p!=elements;/*empty*/)
+			alloc.destroy(--p);//call the destructor of type that p points to
+	}
+}
+
+template<typename T>
+void Vector<T>::pop_back()
+{
+	if(elements==first_free)
+		throw std::logic_error("no elements?!");
+	else
+		alloc.destroy(--first_free);//remove he last element of Vector
+}
+
+template<typename T> 
+void Vector<T>::push_back(const T& t)
+{
+  if(first_free==ends)
+    //allocatable space is using up
+    reallocate();//get more space and copy present elements to new allocated space
+  alloc.construct(first_free,t);
+  ++first_free;
+}
+
+template<typename T>
+void Vector<T>::reserve(const size_t capa)
+{
+  //caculate present array size
+  size_t size=first_free-elements;
+  //allocate space that can hold capa T type elements
+  T* newelements=alloc.allocate(capa);
+  //construct the copy of present elements in new allocated space
+  if(size<=capa)
+    uninitialized_copy(elements,first_free,newelements);
+  else
+    //if  capa<size,then delete redundant elements
+    uninitialized_copy(elements,elements+capa,newelements);
+  //revocate old elements by inverse order
+  for(T* p=first_free;p!=elements;/*empty*/)
+    alloc.destroy(--p);
+  if(elements)
+    //free old memory
+    alloc.deallocate(elements,ends-elements);
+  //make data structure points to new elements
+  elements=newelements;
+  first_free=elements+min(size,capa);
+  ends=elements+capa;
+}
+
+template<typename T>
+void Vector<T>::resize(const size_t n)
+{
+  //caculate present size
+  size_t size=first_free-elements;
+  size_t capacity=ends-elements;
+  if(n>capacity){
+    reallocate();//get more space and copy present elements
+    //add new elements with value initialize
+    uninitialized_fill(first_free,elements+n,T());
+  }else if(n>size)
+    //add new elements with value initialize
+    uninitialized_fill(first_free,elements+n,T());
+  else
+    //revocate elements by reverse order
+    for(T* p=first_free;p!=elements+n;/*empty*/)
+      alloc.destroy(--p);
+  //make data structure points to new elements
+  first_free=elements+n;
+}
+
+//overload rezie function
+template<typename T>
+void Vector<T>::resize(const size_t n,const T& t)
+{
+  //caculate present size
+  size_t size=first_free-elements;
+  size_t capacity=ends-elements;
+  if(n>capacity){
+    reallocate();//get more space and copy present elements
+    //add new elements with value initialize
+    uninitialized_fill(first_free,elements+n,t);
+  }else if(n>size)
+    //add new elements with value initialize
+    uninitialized_fill(first_free,elements+n,t);
+  else
+    //revocate elements by reverse order
+    for(T* p=first_free;p!=elements+n;/*empty*/)
+      alloc.destroy(--p);
+  //make data structure points to new elements
+  first_free=elements+n;
+}
+
+template<typename T>
+bool Vector<T>::operator==(const Vector& rhs)
+{
+	//every element of left and right Vector is equivent,return true or false
+	if((*this).size()!=rhs.size())//both size's length is no equevient,return false
+		return false;
+	else{
+		size_t size=rhs.size();
+		for(size_t n=0;n<size;++n)
+			if((*this)[n]!=rhs[n])
+				return false;
+		return true;
+	}
+}
+
+template<typename T>
+bool operator!=(const Vector<T>& lhs,const Vector<T>& rhs)
+{
+	return !(lhs==rhs);
+}
+
+template<typename T>
+typename Vector<T>::iterator Vector<T>::erase(iterator iter)//remove an element
+{
+	ptrdiff_t distance=iter-elements;
+	if(!(distance>=0 && distance<=(*this).size()))
+		throw std::out_of_range("Not in the Vector range?!");
+	else{
+		for(iterator it=iter;it!=first_free-1;++it)//after-adjacement element cover the former one
+			*it=*(it+1);
+		alloc.destroy(it);//remove last element
+		--first_free;
+	}
+}
+
+template<typename T>
+typename Vector<T>::iterator Vector<T>::erase(iterator beg,iterator end)//remove a range elements
+{
+	ptrdiff_t bDistance=beg-elements;
+	ptrdiff_t eDistance=end-elements;
+	if(bDistance>eDistance)
+		throw std::logic_error("range error!");
+	if((bDistance<=(*this).size() && bDistance>=0) && 
+		(eDistance<=(*this).size() && eDistance>=0)){
+		ptrdiff_t distance=end-beg+1;;//element number of range
+		for(iterator iter=end+1;iter!=first_free;++iter)
+			*(it-distance)=*it;//from end+1 on,latter element cover the former distance number element
+		for(ptrdiff_t i=0;i<distance;++i)
+			alloc.destroy(--first_free);remove element but not free memeory
+	}
+}
+
+#endif
